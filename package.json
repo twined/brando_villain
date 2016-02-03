@@ -1,0 +1,27 @@
+{
+  "name": "brando_villain",
+  "version": "0.1.0",
+  "description": "Brando villain",
+  "main": "./priv/static/js/villain.all.js",
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/twined/brando_villain.git"
+  },
+  "files": [
+    "package.json",
+    "priv/static/js/villain.all.js",
+    "priv/static/css/villain.css"
+  ],
+  "author": "Twined Networks",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/twined/brando_villain/issues"
+  },
+  "homepage": "https://github.com/twined/brando_villain",
+  "devDependencies": {
+  },
+  "scripts": {
+  }
+}
