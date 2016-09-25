@@ -17874,10 +17874,10 @@ var Block = _backbone2.default.View.extend({
       var clipboardHTML = void 0;
       if (/text\/html/.test(types)) {
         // HTML.
-        clipboardHTML = e.originalEvent.clipboardData.getData('text/html');
+        clipboardHTML = e.originalEvent.clipboardData.getData('text/plain'); // text/html
       } else if (/text\/rtf/.test(types) && this.editor.browser.safari) {
         // Safari HTML.
-        clipboardHTML = e.originalEvent.clipboardData.getData('text/rtf');
+        clipboardHTML = e.originalEvent.clipboardData.getData('text/plain'); // text/rtf
       } else if (/text\/plain/.test(types) && !this.editor.browser.mozilla) {
         clipboardHTML = e.originalEvent.clipboardData.getData('text/plain').replace(/\n/g, '<br/>');
       }
@@ -17889,10 +17889,10 @@ var Block = _backbone2.default.View.extend({
       }
 
       if (clipboard) {
-        var cleanHtml = this.processPaste(clipboardHTML);
+        var cleanHtml = this.editor.processPaste(clipboardHTML);
         e.stopPropagation();
         e.preventDefault();
-        this.pasteHtmlAtCaret(cleanHtml);
+        this.editor.pasteHtmlAtCaret(cleanHtml);
 
         return false;
       }
@@ -18860,6 +18860,10 @@ var _block = require('../block');
 
 var _block2 = _interopRequireDefault(_block);
 
+var _html = require('../utils/html');
+
+var _html2 = _interopRequireDefault(_html);
+
 var _alerts = require('../alerts');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -19115,37 +19119,47 @@ var Image = _block2.default.extend({
 
         var data = _this2.getData();
         var $form = (0, _jquery2.default)('<form name="image-meta-' + _this2.dataId + '">');
-        var $meta = (0, _jquery2.default)('\n        <label for="title">Tittel</label>\n        <input value="' + data.title + '" type="text" name="title" />\n        <label for="credits">Kreditering</label>\n        <input value="' + data.credits + '" type="text" name="credits" />\n        <label for="link">URL</label>\n        <input value="' + data.link + '" type="text" name="link" />\n      ');
 
-        $form.append($meta);
-        $form.append((0, _jquery2.default)('<label>Størrelse</label>'));
+        var titleInput = _html2.default.createInput('Tittel', 'title', data.title, [{
+          ev: 'keyup',
+          fn: _underscore2.default.debounce(function (e) {
+            _this2.setDataProperty('title', (0, _jquery2.default)(e.target).val());
+          })
+        }]);
+        var creditsInput = _html2.default.createInput('Kreditering', 'credits', data.credits, [{
+          ev: 'keyup',
+          fn: _underscore2.default.debounce(function (e) {
+            _this2.setDataProperty('credits', (0, _jquery2.default)(e.target).val());
+          })
+        }]);
+        var URLInput = _html2.default.createInput('URL/link', 'link', data.link, [{
+          ev: 'keyup',
+          fn: _underscore2.default.debounce(function (e) {
+            _this2.setDataProperty('link', (0, _jquery2.default)(e.target).val());
+          })
+        }]);
+
+        $form.append(titleInput);
+        $form.append(creditsInput);
+        $form.append(URLInput);
 
         /* create sizes overview */
+        var sizes = [];
+
         Object.keys(data.sizes).forEach(function (key) {
-          var size = data.sizes[key];
-          var checked = '';
-
-          if (size === data.url) {
-            checked = ' checked="checked"';
-          }
-
-          var $radio = (0, _jquery2.default)('\n          <label for="' + key + '">\n            <input type="radio"\n                   name="imagesize"\n                   value="' + size + '"' + checked + ' />\n            ' + key + '\n          </label>\n        ');
-          $form.append($radio);
+          sizes.push({ name: key, val: data.sizes[key] });
         });
 
+        var $radios = _html2.default.createRadios('Størrelse', 'imagesize', sizes, data.url, [{
+          ev: 'change',
+          fn: function fn(e) {
+            _this2.setUrl((0, _jquery2.default)(e.target).val());
+          }
+        }]);
+
+        $form.append($radios);
         _this2.$setup.append($form);
-        _this2.$setup.find('input[name="title"]').on('keyup', _underscore2.default.debounce(_jquery2.default.proxy(function setTitle(e) {
-          this.setDataProperty('title', (0, _jquery2.default)(e.target).val());
-        }, _this2), 700, false));
-        _this2.$setup.find('input[name="credits"]').on('keyup', _underscore2.default.debounce(_jquery2.default.proxy(function setCredits(e) {
-          this.setDataProperty('credits', (0, _jquery2.default)(e.target).val());
-        }, _this2), 700, false));
-        _this2.$setup.find('input[name="link"]').on('keyup', _underscore2.default.debounce(_jquery2.default.proxy(function setLink(e) {
-          this.setDataProperty('link', (0, _jquery2.default)(e.target).val());
-        }, _this2), 700, false));
-        _this2.$setup.find('input[type=radio]').on('change', _jquery2.default.proxy(function setUrl(e) {
-          this.setUrl((0, _jquery2.default)(e.target).val());
-        }, _this2));
+
         _this2.hideSetup();
       })();
     }
@@ -19706,10 +19720,13 @@ var _markup = require('../utils/markup');
 
 var _markup2 = _interopRequireDefault(_markup);
 
+var _alerts = require('../alerts');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Text = _block2.default.extend({
   hasToolbar: true,
+  resizeSetup: false,
   type: 'text',
   template: _underscore2.default.template('<div class="villain-text-block villain-content" contenteditable="true" data-text-type="<%= type %>"><%= content %></div>'),
 
@@ -19774,10 +19791,15 @@ var Text = _block2.default.extend({
     this.activateToolbarButton('.villain-format-italic');
   },
   onClickLink: function onClickLink(e) {
+    var _this = this;
+
     e.preventDefault();
-    var link = prompt('link');
-    document.execCommand('createLink', false, link);
-    this.activateToolbarButton('.villain-format-link');
+    var sel = this.editor.saveSelection();
+    (0, _alerts.alertPrompt)('URL/adresse:', function (link) {
+      _this.editor.restoreSelection(sel);
+      document.execCommand('createLink', false, link);
+      _this.activateToolbarButton('.villain-format-link');
+    });
   },
   onClickUnlink: function onClickUnlink(e) {
     e.preventDefault();
@@ -19806,7 +19828,7 @@ var Text = _block2.default.extend({
     return _marked2.default.toHTML(textNode);
   },
   setup: function setup() {
-    var _this = this;
+    var _this2 = this;
 
     var data = this.getData();
     if (!{}.hasOwnProperty.call(data, 'type')) {
@@ -19819,9 +19841,9 @@ var Text = _block2.default.extend({
     var radios = _html2.default.createRadios('Type', 'text-type-' + this.dataId, [{ name: 'Paragraf', val: 'paragraph' }, { name: 'Ingress', val: 'lead' }], type, [{
       ev: 'change',
       fn: function fn(e) {
-        _this.setDataProperty('type', (0, _jquery2.default)(e.target).val());
-        _this.refreshContentBlock();
-        _this.$content.attr('data-text-type', (0, _jquery2.default)(e.target).val());
+        _this2.setDataProperty('type', (0, _jquery2.default)(e.target).val());
+        _this2.refreshContentBlock();
+        _this2.$content.attr('data-text-type', (0, _jquery2.default)(e.target).val());
       }
     }]);
 
@@ -19863,17 +19885,20 @@ var _block2 = _interopRequireDefault(_block);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var VIMEO_REGEX = /(?:http[s]?:\/\/)?(?:www.)?vimeo.com\/(.+)/;
+var YOUTUBE_REGEX = /(?:http[s]?:\/\/)?(?:www.)?(?:(?:youtube.com\/watch\?(?:.*)(?:v=))|(?:youtu.be\/))([^&].+)/;
+
 var Video = _block2.default.extend({
   type: 'video',
   resizeSetup: false,
 
   providers: {
     vimeo: {
-      regex: /(?:http[s]?:\/\/)?(?:www.)?vimeo.com\/(.+)/,
+      regex: VIMEO_REGEX,
       html: ['<iframe src="{{protocol}}//player.vimeo.com/video/{{remote_id}}?title=0&byline=0" ', 'width="580" height="320" frameborder="0"></iframe>'].join('\n')
     },
     youtube: {
-      regex: /(?:http[s]?:\/\/)?(?:www.)?(?:(?:youtube.com\/watch\?(?:.*)(?:v=))|(?:youtu.be\/))([^&].+)/,
+      regex: YOUTUBE_REGEX,
       html: ['<iframe src="{{protocol}}//www.youtube.com/embed/{{remote_id}}" ', 'width="580" height="320" frameborder="0" allowfullscreen></iframe>'].join('\n')
     }
   },
@@ -20164,6 +20189,34 @@ var Editor = _backbone2.default.View.extend({
       this.sourceMode = true;
     }
   },
+  saveSelection: function saveSelection() {
+    if (window.getSelection) {
+      var sel = window.getSelection();
+      if (sel.getRangeAt && sel.rangeCount) {
+        var ranges = [];
+        for (var i = 0, len = sel.rangeCount; i < len; i += 1) {
+          ranges.push(sel.getRangeAt(i));
+        }
+        return ranges;
+      }
+    } else if (document.selection && document.selection.createRange) {
+      return document.selection.createRange();
+    }
+    return null;
+  },
+  restoreSelection: function restoreSelection(savedSel) {
+    if (savedSel) {
+      if (window.getSelection) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        for (var i = 0, len = savedSel.length; i < len; i += 1) {
+          sel.addRange(savedSel[i]);
+        }
+      } else if (document.selection && savedSel.select) {
+        savedSel.select();
+      }
+    }
+  },
   organizeMode: function organizeMode() {
     (0, _jquery2.default)('.villain-block-wrapper').toggleClass('organize');
     (0, _jquery2.default)('.villain-block-wrapper[data-block-type="columns"]').removeClass('organize');
@@ -20416,17 +20469,16 @@ var Editor = _backbone2.default.View.extend({
         range = sel.getRangeAt(0);
         range.deleteContents();
 
-        // Range.createContextualFragment() would be useful here but is
-        // only relatively recently standardized and is not supported in
-        // some browsers (IE9, for one)
         var el = document.createElement('div');
         el.innerHTML = html;
         var frag = document.createDocumentFragment();
 
-        var node = void 0;
+        var node = el.firstChild;
         var lastNode = void 0;
-        while (node = el.firstChild) {
+
+        while (node != null) {
           lastNode = frag.appendChild(node);
+          node = el.firstChild;
         }
 
         range.insertNode(frag);
@@ -20561,6 +20613,7 @@ var Plus = _backbone2.default.View.extend({
   el: null,
   tagName: 'div',
   className: 'villain-add-block villain-droppable',
+  template: _underscore2.default.template('<button class="villain-add-block-button">+</button>'),
   blockSelectionTemplate: _underscore2.default.template('<div class="villain-block-selection"><%= content %><button class="villain-close-picker">×</button></div>'),
   events: {
     'click .villain-add-block-button': 'onClickAddBlock',
@@ -20577,7 +20630,7 @@ var Plus = _backbone2.default.View.extend({
     this.render();
   },
   render: function render() {
-    this.$el.append('<button class="villain-add-block-button">+</button>');
+    this.$el.html(this.template());
     return this;
   },
   onClickBlockButton: function onClickBlockButton(e) {
@@ -20983,7 +21036,7 @@ var HTMLUtils = function () {
         return '\n          <label>\n            <input type="radio"\n                   name="' + inputName + '"\n                   value="' + choiceValue + '"' + selected + '>' + choiceName + '\n          </label>';
       });
 
-      var $radios = (0, _jquery2.default)('\n      <div class="villain-form-input-wrapper">\n        <label>' + labelName + '</label>\n        ' + radios.join('\n') + '\n      </div>\n    ');
+      var $radios = (0, _jquery2.default)('\n      <div class="villain-form-input-wrapper">\n        <div class="villain-form-label-wrapper">\n          <label>\n            ' + labelName + '\n          </label>\n        </div>\n        ' + radios.join('\n') + '\n      </div>\n    ');
 
       if (events) {
         events.forEach(function (_ref2) {
@@ -20999,7 +21052,7 @@ var HTMLUtils = function () {
   }, {
     key: 'createInput',
     value: function createInput(labelName, inputName, initialValue) {
-      return '\n      <div class="villain-form-input-wrapper">\n        <label>' + labelName + '</label>\n        <input type="text" value="' + initialValue + '" name="' + inputName + '" />\n      </div>\n    ';
+      return '\n      <div class="villain-form-input-wrapper">\n        <div class="villain-form-label-wrapper">\n          <label>' + labelName + '</label>\n        </div>\n        <input type="text" value="' + initialValue + '" name="' + inputName + '" />\n      </div>\n    ';
     }
   }]);
 
