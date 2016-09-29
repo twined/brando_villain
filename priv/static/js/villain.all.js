@@ -21492,7 +21492,9 @@ var Image = _block2.default.extend({
         var URLInput = _html2.default.createInput(_this3.editor.i18n.t('images:url'), 'link', data.link, [{
           ev: 'keyup',
           fn: _underscore2.default.debounce(function (e) {
+            console.log(_this3.data);
             _this3.setDataProperty('link', (0, _jquery2.default)(e.target).val());
+            console.log(_this3.data);
           })
         }]);
 
