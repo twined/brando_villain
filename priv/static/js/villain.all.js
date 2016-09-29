@@ -21477,26 +21477,26 @@ var Image = _block2.default.extend({
         var data = _this3.getData();
         var $form = (0, _jquery2.default)('<form name="image-meta-' + _this3.dataId + '">');
 
-        var titleInput = _html2.default.createInput(_this3.editor.i18n.t('images:title'), 'title', data.title, [{
+        var titleInput = _html2.default.createInput(_this3.editor.i18n.t('images:title'), 'title', data.title, {
           ev: 'keyup',
           fn: _underscore2.default.debounce(function (e) {
             _this3.setDataProperty('title', (0, _jquery2.default)(e.target).val());
           })
-        }]);
-        var creditsInput = _html2.default.createInput(_this3.editor.i18n.t('images:credits'), 'credits', data.credits, [{
+        });
+        var creditsInput = _html2.default.createInput(_this3.editor.i18n.t('images:credits'), 'credits', data.credits, {
           ev: 'keyup',
           fn: _underscore2.default.debounce(function (e) {
             _this3.setDataProperty('credits', (0, _jquery2.default)(e.target).val());
           })
-        }]);
-        var URLInput = _html2.default.createInput(_this3.editor.i18n.t('images:url'), 'link', data.link, [{
+        });
+        var URLInput = _html2.default.createInput(_this3.editor.i18n.t('images:url'), 'link', data.link, {
           ev: 'keyup',
           fn: _underscore2.default.debounce(function (e) {
             console.log(_this3.data);
             _this3.setDataProperty('link', (0, _jquery2.default)(e.target).val());
             console.log(_this3.data);
           })
-        }]);
+        });
 
         $form.append(titleInput);
         $form.append(creditsInput);
