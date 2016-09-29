@@ -21079,12 +21079,12 @@ var Header = _block2.default.extend({
       }
     }]);
 
-    var anchorInput = _html2.default.createInput(this.editor.i18n.t('header:anchor'), 'header-anchor-' + this.dataId, anchor, [{
+    var anchorInput = _html2.default.createInput(this.editor.i18n.t('header:anchor'), 'header-anchor-' + this.dataId, anchor, {
       ev: 'keyup',
       fn: function fn(e) {
         _this.setDataProperty('anchor', (0, _jquery2.default)(e.target).val());
       }
-    }]);
+    });
 
     this.$setup.append(headerSizeRadios);
     this.$setup.append(anchorInput);
@@ -21492,9 +21492,7 @@ var Image = _block2.default.extend({
         var URLInput = _html2.default.createInput(_this3.editor.i18n.t('images:url'), 'link', data.link, {
           ev: 'keyup',
           fn: _underscore2.default.debounce(function (e) {
-            console.log(_this3.data);
             _this3.setDataProperty('link', (0, _jquery2.default)(e.target).val());
-            console.log(_this3.data);
           })
         });
 
