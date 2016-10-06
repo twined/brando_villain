@@ -21541,7 +21541,8 @@ var Image = _block2.default.extend({
       /**
        * Data returned from image browse.
        */
-      if (data.status !== 200) {
+
+      if (parseInt(data.status, 10) !== 200) {
         (0, _alerts.alertError)(_this4.editor.i18n.t('errors:no_images_found'));
         _this4.done();
         return false;
