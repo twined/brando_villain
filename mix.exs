@@ -31,7 +31,7 @@ defmodule BrandoVillain.Mixfile do
        "lib", "priv", "mix.exs", "package.json", "README*"],
      maintainers: ["Twined Networks"],
      licenses: [""],
-     links: %{"GitHub" => "https://github.com/twined/brando_villain"}
+     links: %{}
     ]
   end
 
