@@ -7,4 +7,4 @@
 5. Tag as "vX.X.X"
 6. Push tag
 7. mix hex.build
-8. mix hex.publish
+8. mix hex.publish package
